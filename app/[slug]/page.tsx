@@ -9,7 +9,7 @@ export default function ProposalPage() {
   const slug = params.slug as string
   const router = useRouter()
 
-  const [initialData, setInitialData] = useState<Record<string, string> | null>(null)
+  const [initialData, setInitialData] = useState<Record<string, unknown> | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState('')
@@ -28,7 +28,7 @@ export default function ProposalPage() {
       .catch(() => setLoading(false))
   }, [slug, router])
 
-  async function handleSave(data: Record<string, string>) {
+  async function handleSave(data: Record<string, unknown>) {
     setSaving(true)
     setSaveStatus('saving')
     setSaveError('')

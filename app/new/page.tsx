@@ -10,8 +10,8 @@ export default function NewProposalPage() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
-  async function handleSave(data: Record<string, string>) {
-    if (!data.test_name?.trim()) {
+  async function handleSave(data: Record<string, unknown>) {
+    if (!(data.test_name as string)?.trim()) {
       setError('Please enter a test name before saving.')
       return
     }
