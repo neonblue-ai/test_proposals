@@ -1,36 +1,127 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Suno Proposals
 
-## Getting Started
+Internal tool for creating, managing, and sharing campaign test proposals between the Neonblue and Suno teams.
 
-First, run the development server:
+**Production URL:** `https://sunoproposals.neonbluesuccess.com`  
+**Local:** `http://localhost:3000`
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+---
+
+## Stack
+
+| Layer | Service |
+|---|---|
+| Framework | Next.js 16 (App Router) |
+| Auth | NextAuth.js v5 (Google OAuth) |
+| Database | Neon (Postgres, serverless) |
+| Hosting | Vercel |
+| DNS | Managed via Vercel (subdomain of `neonbluesuccess.com`) |
+
+---
+
+## Auth — Google OAuth (GCP)
+
+**Project:** `neonblue-proposals` (or whichever GCP project was used)  
+**Console:** [console.cloud.google.com/apis/credentials](https://console.cloud.google.com/apis/credentials)
+
+- **OAuth Type:** External (allows both `@neonblue.ai` and `@suno.com` accounts)
+- **Status:** Testing mode — test users must be explicitly added in GCP console
+- **Allowed domains (enforced in code):** `neonblue.ai`, `suno.com`
+
+**Authorized redirect URIs:**
+```
+http://localhost:3000/api/auth/callback/google
+https://sunoproposals.neonbluesuccess.com/api/auth/callback/google
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+> If the domain changes, add the new redirect URI in GCP → OAuth 2.0 Client → Edit.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Database — Neon
 
-## Learn More
+**Console:** [console.neon.tech](https://console.neon.tech)  
+**Project:** `suno-proposals`  
+**Region:** `us-east-2` (AWS)  
+**Database:** `neondb`  
+**Connection:** Pooled (serverless-compatible)
 
-To learn more about Next.js, take a look at the following resources:
+The `proposals` table is created automatically on first run via `lib/db.ts → initDb()`. No migrations needed.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+**Schema summary:**
+- `id`, `slug`, `test_name`, `created_at`, `updated_at`, `created_by`
+- Sections: Flow Details, Message Spec, Testing Goals, Personalization Strategy, Results & Learning, Creative Strategy
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+---
 
-## Deploy on Vercel
+## Environment Variables
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Set these in Vercel project settings → Environment Variables (and locally in `.env.local`):
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+| Variable | Description |
+|---|---|
+| `AUTH_GOOGLE_ID` | Google OAuth Client ID (from GCP) |
+| `AUTH_GOOGLE_SECRET` | Google OAuth Client Secret (from GCP) |
+| `AUTH_SECRET` | Random secret for JWT signing (`openssl rand -base64 32`) |
+| `DATABASE_URL` | Neon connection string (pooled, with `sslmode=require`) |
+| `NEXTAUTH_URL` | Full base URL (`https://sunoproposals.neonbluesuccess.com` in prod) |
+
+---
+
+## Vercel Hosting
+
+**Project:** `suno-proposals` (separate from the `neonblue - customer success` static site)  
+**Custom domain:** `sunoproposals.neonbluesuccess.com`  
+**DNS record:** `CNAME sunoproposals → cname.vercel-dns.com`
+
+> The parent domain `neonbluesuccess.com` is a separate Vercel project (static HTML). Both coexist under the same root domain.
+
+---
+
+## Local Development
+
+```bash
+# Install dependencies
+npm install
+
+# Add environment variables
+cp .env.local.example .env.local  # then fill in values
+
+# Run dev server
+npm run dev
+# → http://localhost:3000
+```
+
+---
+
+## Deployment
+
+Pushes to `main` auto-deploy via Vercel. No build step needed — Vercel handles it.
+
+```bash
+git add -A
+git commit -m "your message"
+git push origin main
+```
+
+---
+
+## Proposal URL Structure
+
+| Route | Description |
+|---|---|
+| `/` | List of all proposals |
+| `/new` | Create a new proposal |
+| `/[slug]` | View and edit a proposal |
+
+Slugs are auto-generated from the **Test Name** field on creation.
+
+---
+
+## Adding New Team Members (Auth)
+
+1. Go to [console.cloud.google.com](https://console.cloud.google.com) → APIs & Services → OAuth consent screen → Test users
+2. Add their Google account email
+3. They can now log in at `sunoproposals.neonbluesuccess.com` with their `@neonblue.ai` or `@suno.com` account
+
+> Only needed while the app is in GCP "Testing" mode. If published, any `@neonblue.ai` or `@suno.com` account can log in without being pre-added.
