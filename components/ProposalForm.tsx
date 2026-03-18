@@ -27,6 +27,8 @@ const EMPTY: Record<string, string> = {
   strategic_angle: '', claims: '', proof_assets: '', message_structure: '',
 }
 
+// ─── Icons (outside component so they never re-create) ───────────────────────
+
 function SaveIcon() {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -64,6 +66,78 @@ function TrashIcon() {
   )
 }
 
+// ─── Reusable field components (outside ProposalForm to prevent unmount on re-render) ─
+
+interface FieldProps {
+  label: string
+  placeholder?: string
+  optional?: boolean
+  value: string
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void
+}
+
+function Field({ label, placeholder, optional, value, onChange }: FieldProps) {
+  return (
+    <div className="form-group">
+      <label className="form-label">
+        {label}{optional && <span className="optional">(optional)</span>}
+      </label>
+      <input
+        type="text"
+        className="form-input"
+        placeholder={placeholder}
+        value={value}
+        onChange={onChange}
+      />
+    </div>
+  )
+}
+
+interface TextAreaProps {
+  label: string
+  placeholder?: string
+  optional?: boolean
+  value: string
+  onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void
+}
+
+function TextArea({ label, placeholder, optional, value, onChange }: TextAreaProps) {
+  return (
+    <div className="form-group">
+      <label className="form-label">
+        {label}{optional && <span className="optional">(optional)</span>}
+      </label>
+      <textarea
+        className="form-textarea"
+        placeholder={placeholder}
+        value={value}
+        onChange={onChange}
+      />
+    </div>
+  )
+}
+
+interface SelectProps {
+  label: string
+  options: string[]
+  value: string
+  onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void
+}
+
+function Select({ label, options, value, onChange }: SelectProps) {
+  return (
+    <div className="form-group">
+      <label className="form-label">{label}</label>
+      <select className="form-input form-select" value={value} onChange={onChange}>
+        <option value="">Select KPI…</option>
+        {options.map((o) => <option key={o}>{o}</option>)}
+      </select>
+    </div>
+  )
+}
+
+// ─── Main component ───────────────────────────────────────────────────────────
+
 export default function ProposalForm({
   mode, initialData, onSave, onDelete, saving, saveError, saveStatus = 'idle'
 }: ProposalFormProps) {
@@ -76,51 +150,6 @@ export default function ProposalForm({
   }, [])
 
   const slug = slugify(data.test_name || '')
-
-  function Field({ label, field, placeholder, optional }: { label: string; field: string; placeholder?: string; optional?: boolean }) {
-    return (
-      <div className="form-group">
-        <label className="form-label">
-          {label}{optional && <span className="optional">(optional)</span>}
-        </label>
-        <input
-          type="text"
-          className="form-input"
-          placeholder={placeholder}
-          value={data[field] || ''}
-          onChange={set(field)}
-        />
-      </div>
-    )
-  }
-
-  function TextArea({ label, field, placeholder, optional }: { label: string; field: string; placeholder?: string; optional?: boolean }) {
-    return (
-      <div className="form-group">
-        <label className="form-label">
-          {label}{optional && <span className="optional">(optional)</span>}
-        </label>
-        <textarea
-          className="form-textarea"
-          placeholder={placeholder}
-          value={data[field] || ''}
-          onChange={set(field)}
-        />
-      </div>
-    )
-  }
-
-  function Select({ label, field, options }: { label: string; field: string; options: string[] }) {
-    return (
-      <div className="form-group">
-        <label className="form-label">{label}</label>
-        <select className="form-input form-select" value={data[field] || ''} onChange={set(field)}>
-          <option value="">Select KPI…</option>
-          {options.map((o) => <option key={o}>{o}</option>)}
-        </select>
-      </div>
-    )
-  }
 
   return (
     <div className="page-proposal">
@@ -220,16 +249,16 @@ export default function ProposalForm({
                 <h2 className="form-card-title">1. Flow Details</h2>
               </div>
               <div className="form-fields">
-                <Field label="Flow Name" field="flow_name" placeholder="e.g., Behavior-Based Welcome Series" />
-                <Field label="Canvas Link" field="canvas_link" placeholder="https://canvas.neonblue.app/…" />
-                <div className="form-subheader">Triggers & Rules</div>
-                <Field label="Entry Trigger" field="entry_trigger" placeholder="Event / property / segment join" />
-                <Field label="Entry Rules" field="entry_rules" placeholder="Eligibility, exclusions, cooldowns…" />
-                <Field label="Exit Rules" field="exit_rules" placeholder="What removes them" />
+                <Field label="Flow Name" placeholder="e.g., Behavior-Based Welcome Series" value={data.flow_name || ''} onChange={set('flow_name')} />
+                <Field label="Canvas Link" placeholder="https://canvas.neonblue.app/…" value={data.canvas_link || ''} onChange={set('canvas_link')} />
+                <div className="form-subheader">Triggers &amp; Rules</div>
+                <Field label="Entry Trigger" placeholder="Event / property / segment join" value={data.entry_trigger || ''} onChange={set('entry_trigger')} />
+                <Field label="Entry Rules" placeholder="Eligibility, exclusions, cooldowns…" value={data.entry_rules || ''} onChange={set('entry_rules')} />
+                <Field label="Exit Rules" placeholder="What removes them" value={data.exit_rules || ''} onChange={set('exit_rules')} />
                 <div className="form-subheader">Flow Goals</div>
                 <div className="form-row-2">
-                  <Field label="Primary Goal" field="primary_goal" placeholder="Primary objective" />
-                  <Field label="Secondary Goals" field="secondary_goals" placeholder="Secondary objectives" />
+                  <Field label="Primary Goal" placeholder="Primary objective" value={data.primary_goal || ''} onChange={set('primary_goal')} />
+                  <Field label="Secondary Goals" placeholder="Secondary objectives" value={data.secondary_goals || ''} onChange={set('secondary_goals')} />
                 </div>
               </div>
             </div>
@@ -246,21 +275,22 @@ export default function ProposalForm({
                 <h2 className="form-card-title">2. Message Spec</h2>
               </div>
               <div className="form-fields">
-                <Field label="Step / Message" field="step_message" placeholder="e.g., Email 2 / Push 1" />
+                <Field label="Step / Message" placeholder="e.g., Email 2 / Push 1" value={data.step_message || ''} onChange={set('step_message')} />
                 <div className="form-row-2">
-                  <Field label="Template" field="template_name" placeholder="Klaviyo/Braze template" />
-                  <Field label="Send Timing" field="send_timing" placeholder="Relative delay" />
+                  <Field label="Template" placeholder="Klaviyo/Braze template" value={data.template_name || ''} onChange={set('template_name')} />
+                  <Field label="Send Timing" placeholder="Relative delay" value={data.send_timing || ''} onChange={set('send_timing')} />
                 </div>
                 <div className="form-subheader">Success KPI</div>
                 <div className="form-row-2">
                   <Select
                     label="Primary KPI"
-                    field="primary_kpi"
                     options={['Clips per User', 'Conversion Rate', 'Click-Through Rate', 'Open Rate', 'Revenue per User', 'Retention Rate']}
+                    value={data.primary_kpi || ''}
+                    onChange={set('primary_kpi')}
                   />
-                  <Field label="Secondary KPIs" field="secondary_kpis" placeholder="Other metrics" />
+                  <Field label="Secondary KPIs" placeholder="Other metrics" value={data.secondary_kpis || ''} onChange={set('secondary_kpis')} />
                 </div>
-                <Field label="Guardrails" field="guardrails" placeholder="Unsubscribe, churn, CS tickets…" />
+                <Field label="Guardrails" placeholder="Unsubscribe, churn, CS tickets…" value={data.guardrails || ''} onChange={set('guardrails')} />
               </div>
             </div>
           </div>
@@ -277,12 +307,12 @@ export default function ProposalForm({
             </div>
             <div className="form-fields">
               <div className="form-row-2">
-                <TextArea label="Overall Test Direction" field="test_direction" placeholder="What is the theme of this test? (e.g., Persona differentiation, feature-focus)" />
-                <TextArea label="Test Hypothesis" field="test_hypothesis" placeholder="What exactly are we trying to test?" />
+                <TextArea label="Overall Test Direction" placeholder="What is the theme of this test? (e.g., Persona differentiation, feature-focus)" value={data.test_direction || ''} onChange={set('test_direction')} />
+                <TextArea label="Test Hypothesis" placeholder="What exactly are we trying to test?" value={data.test_hypothesis || ''} onChange={set('test_hypothesis')} />
               </div>
               <div className="form-row-2">
-                <TextArea label="Hypothesis Reasons" field="hypothesis_reasons" placeholder="What in previous tests or performance informs this hypothesis?" />
-                <TextArea label="Hypothesis Exclusion" field="hypothesis_exclusion" placeholder="What could be misinterpreted as the purpose of this test?" optional />
+                <TextArea label="Hypothesis Reasons" placeholder="What in previous tests or performance informs this hypothesis?" value={data.hypothesis_reasons || ''} onChange={set('hypothesis_reasons')} />
+                <TextArea label="Hypothesis Exclusion" placeholder="What could be misinterpreted as the purpose of this test?" optional value={data.hypothesis_exclusion || ''} onChange={set('hypothesis_exclusion')} />
               </div>
             </div>
           </div>
@@ -322,17 +352,17 @@ export default function ProposalForm({
                     <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
                   </svg>
                 </div>
-                <h2 className="form-card-title">5. Results & Learning Capture</h2>
+                <h2 className="form-card-title">5. Results &amp; Learning Capture</h2>
               </div>
               <div className="form-fields">
                 <div className="form-subheader">Expected Learnings</div>
-                <Field label="Learning 1" field="expected_learning_1" placeholder="Expected Learning 1" />
-                <Field label="Learning 2" field="expected_learning_2" placeholder="Expected Learning 2" />
-                <Field label="Learning 3" field="expected_learning_3" placeholder="Expected Learning 3" optional />
+                <Field label="Learning 1" placeholder="Expected Learning 1" value={data.expected_learning_1 || ''} onChange={set('expected_learning_1')} />
+                <Field label="Learning 2" placeholder="Expected Learning 2" value={data.expected_learning_2 || ''} onChange={set('expected_learning_2')} />
+                <Field label="Learning 3" placeholder="Expected Learning 3" optional value={data.expected_learning_3 || ''} onChange={set('expected_learning_3')} />
                 <div className="form-subheader">Next Test Proposals</div>
-                <Field label="Follow-up Test 1" field="next_test_1" placeholder="Follow-up test idea based on learnings" />
-                <Field label="Follow-up Test 2" field="next_test_2" placeholder="Follow-up test idea based on learnings" />
-                <Field label="Follow-up Test 3" field="next_test_3" placeholder="Follow-up test idea based on learnings" optional />
+                <Field label="Follow-up Test 1" placeholder="Follow-up test idea based on learnings" value={data.next_test_1 || ''} onChange={set('next_test_1')} />
+                <Field label="Follow-up Test 2" placeholder="Follow-up test idea based on learnings" value={data.next_test_2 || ''} onChange={set('next_test_2')} />
+                <Field label="Follow-up Test 3" placeholder="Follow-up test idea based on learnings" optional value={data.next_test_3 || ''} onChange={set('next_test_3')} />
               </div>
             </div>
           </div>
@@ -350,12 +380,12 @@ export default function ProposalForm({
             </div>
             <div className="form-fields">
               <div className="form-row-2">
-                <TextArea label="Strategic Angle" field="strategic_angle" placeholder="e.g. Problem/Solution, Education, Premium, Social proof, Founder story…" />
-                <TextArea label="Claims" field="claims" placeholder="Specific product/brand elements we want to include" />
+                <TextArea label="Strategic Angle" placeholder="e.g. Problem/Solution, Education, Premium, Social proof, Founder story…" value={data.strategic_angle || ''} onChange={set('strategic_angle')} />
+                <TextArea label="Claims" placeholder="Specific product/brand elements we want to include" value={data.claims || ''} onChange={set('claims')} />
               </div>
               <div className="form-row-2">
-                <TextArea label="Proof Assets" field="proof_assets" placeholder="Stats, testimonials, certifications, screenshots, product GIFs…" />
-                <TextArea label="Message Structure" field="message_structure" placeholder="Required messaging structure beyond the template" />
+                <TextArea label="Proof Assets" placeholder="Stats, testimonials, certifications, screenshots, product GIFs…" value={data.proof_assets || ''} onChange={set('proof_assets')} />
+                <TextArea label="Message Structure" placeholder="Required messaging structure beyond the template" value={data.message_structure || ''} onChange={set('message_structure')} />
               </div>
             </div>
           </div>
