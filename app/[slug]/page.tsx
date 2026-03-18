@@ -52,6 +52,15 @@ export default function ProposalPage() {
     }
   }
 
+  async function handleDelete() {
+    try {
+      await fetch(`/api/proposals/${slug}`, { method: 'DELETE' })
+      router.push('/')
+    } catch {
+      // silently fail — user stays on page
+    }
+  }
+
   if (loading) {
     return (
       <div className="page-proposal" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
@@ -67,6 +76,7 @@ export default function ProposalPage() {
       mode="edit"
       initialData={initialData}
       onSave={handleSave}
+      onDelete={handleDelete}
       saving={saving}
       saveError={saveError}
       saveStatus={saveStatus}

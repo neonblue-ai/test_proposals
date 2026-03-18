@@ -59,6 +59,13 @@ export default async function HomePage() {
 
   return (
     <div className="page-home">
+      {/* Background effects */}
+      <div className="home-bg">
+        <div className="home-grid-overlay" />
+        <div className="home-glow top-left" />
+        <div className="home-glow bottom-right" />
+      </div>
+
       <div className="home-container fade-in">
         {/* Header */}
         <header className="home-header">

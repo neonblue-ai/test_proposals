@@ -11,7 +11,6 @@ function LoginForm() {
   return (
     <div className="page-login">
       <div className="login-card fade-in">
-        <div className="login-logo">N</div>
         <h1 className="login-title">Suno Proposals</h1>
         <p className="login-subtitle">
           Sign in with your Neonblue or Suno account to access campaign proposals.
