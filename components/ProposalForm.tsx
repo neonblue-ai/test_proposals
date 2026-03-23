@@ -31,6 +31,8 @@ export interface Step {
   strategic_angle: string
   detailed_creative_direction: string
   creative_entries: CreativeEntries
+  // Rules
+  rules: string[]
 }
 
 const EMPTY_STEP: Omit<Step, 'id' | 'label'> = {
@@ -38,10 +40,11 @@ const EMPTY_STEP: Omit<Step, 'id' | 'label'> = {
   segmentations: [''],
   strategic_angle: '', detailed_creative_direction: '',
   creative_entries: { ...EMPTY_CREATIVE },
+  rules: [''],
 }
 
 function newStep(index: number): Step {
-  return { id: crypto.randomUUID(), label: `Message ${index + 1}`, ...EMPTY_STEP, segmentations: [''], creative_entries: { ...EMPTY_CREATIVE } }
+  return { id: crypto.randomUUID(), label: `Message ${index + 1}`, ...EMPTY_STEP, segmentations: [''], creative_entries: { ...EMPTY_CREATIVE }, rules: [''] }
 }
 
 interface ProposalFormProps {
@@ -196,6 +199,7 @@ export default function ProposalForm({
           segmentations: segs.length > 0 ? segs : [''],
           creative_entries: (old.creative_entries as CreativeEntries) || { ...EMPTY_CREATIVE },
           detailed_creative_direction: (old.detailed_creative_direction as string) || '',
+          rules: (old.rules as string[]) || [''],
         } as Step
       })
     }
@@ -226,6 +230,18 @@ export default function ProposalForm({
 
   const removeSegmentation = (id: string, index: number) => setSteps(prev => prev.map(s =>
     s.id === id ? { ...s, segmentations: s.segmentations.filter((_, i) => i !== index) } : s
+  ))
+
+  const addRule = (id: string) => setSteps(prev => prev.map(s =>
+    s.id === id ? { ...s, rules: [...s.rules, ''] } : s
+  ))
+
+  const updateRule = (id: string, index: number, value: string) => setSteps(prev => prev.map(s =>
+    s.id === id ? { ...s, rules: s.rules.map((r, i) => i === index ? value : r) } : s
+  ))
+
+  const removeRule = (id: string, index: number) => setSteps(prev => prev.map(s =>
+    s.id === id ? { ...s, rules: s.rules.filter((_, i) => i !== index) } : s
   ))
 
   const addStep = () => {
@@ -462,6 +478,29 @@ export default function ProposalForm({
                           <Field label="CTA Direction" placeholder="Direction for CTA, e.g. action-oriented, low-commitment…" value={activeStep.creative_entries.cta} onChange={setStepCreative(activeStep.id, 'cta')} />
                           <Field label="CTA URL" placeholder="https://…" value={activeStep.creative_entries.cta_url} onChange={setStepCreative(activeStep.id, 'cta_url')} />
                         </div>
+
+                        <div className="form-subheader">Rules</div>
+                        <p style={{ margin: '-8px 0 8px', fontSize: '0.85rem', color: 'var(--beige-text-sec)' }}>Additional rules on top of existing hard rules</p>
+                        {activeStep.rules.map((rule, ri) => (
+                          <div key={ri} className="segment-row">
+                            <span className="segment-pill" style={{ background: 'rgba(239,68,68,0.08)', color: '#ef4444' }}>Rule {ri + 1}</span>
+                            <input
+                              type="text"
+                              className="form-input"
+                              placeholder={`e.g. No discount language, Max 2 CTAs…`}
+                              value={rule}
+                              onChange={(e) => updateRule(activeStep.id, ri, e.target.value)}
+                            />
+                            {activeStep.rules.length > 1 && (
+                              <button className="seg-remove-btn" onClick={() => removeRule(activeStep.id, ri)} title="Remove">
+                                &times;
+                              </button>
+                            )}
+                          </div>
+                        ))}
+                        <button className="btn-add-seg" onClick={() => addRule(activeStep.id)}>
+                          <PlusIcon /> Add Rule
+                        </button>
                       </div>
                     </div>
                   </div>
